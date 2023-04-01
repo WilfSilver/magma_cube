@@ -48,27 +48,39 @@ class MagmaWindow(mglw.WindowConfig):
 
         self.agent = self.ctx.compute_shader(get_shader("agent"))
         self.agent['trail_map'] = 0
-        self.agents_num = 400
+        self.agents_num = 40000
 
         info = np.array([
-            (randint(1, self.window_size[0] - 1),
-             randint(1, self.window_size[1] - 1),
+            (0, 0)
+            for _ in range(self.agents_num)], np.dtype("i4, i4"))
+        self.debug_buffer = self.ctx.buffer(data=info)
+        info = np.array([
+            (tuple(randint(0, x) for x in self.window_size),
              2 * math.pi * random())
-            for _ in range(self.agents_num)], np.dtype("i4, i4, f4"))
-        print(info)
-        print(len(info))
+            for _ in range(self.agents_num)], np.dtype("(2)i4, f4"))
+
         self.agents_buffer = self.ctx.buffer(data=info)
+
+        a = np.frombuffer(self.agents_buffer.read(), dtype=np.dtype("i4, i4, f4"))
+        print(a)
 
         self.agent['num_agents'] = self.agents_num
         self.agent['move_speed'] = 100
+        self.agent['sensor_angle_spacing'] = math.pi / 9
+        self.agent['turn_speed'] = 2 * math.pi * 20
 
-        self.trail_map_img = self.ctx.texture(
-            self.window_size,
-            4,
-        )
-        self.trail_map_img.filter = mgl.NEAREST, mgl.NEAREST
+        self.trail_maps = [
+            self.ctx.texture(
+                self.window_size,
+                4,
+            ) for _ in range(2)
+        ]
+        for map in self.trail_maps:
+            map.filter = mgl.NEAREST, mgl.NEAREST
+        self.curr_trail_map = 0
 
         self.blur_compute = self.ctx.compute_shader(get_shader('blur'))
+        self.blur_compute['decay_rate'] = 5
 
         self.quad_fs = mglw.geometry.quad_fs()
 
@@ -81,23 +93,33 @@ class MagmaWindow(mglw.WindowConfig):
         try:
             self.agent['time'].value = time
         except Exception:
-            pass
-            # self.agent['time'].value = 100
+            self.agent['time'].value = 100
 
-        w, h = self.trail_map_img.size
+        trail_map = self.trail_maps[self.curr_trail_map]
+        next_trail_map_index = 1 if self.curr_trail_map == 0 else 0
+        next_trail_map = self.trail_maps[next_trail_map_index]
+        w, h = trail_map.size
 
         self.agent['width'] = w
         self.agent['height'] = h
         self.agent['delta_time'] = frame_time
 
-        self.trail_map_img.bind_to_image(0, read=True, write=True)
+        trail_map.bind_to_image(0, read=True, write=True)
         self.agents_buffer.bind_to_storage_buffer(0)
+        self.debug_buffer.bind_to_storage_buffer(1)
         self.agent.run(self.agents_num, 1, 1)
 
+        # a = np.frombuffer(self.debug_buffer.read(), dtype=np.dtype("i4, i4"))
+        # print(a)
+        # input()
+
+        self.blur_compute['delta_time'] = frame_time
+        next_trail_map.bind_to_image(1, read=False, write=True)
         self.blur_compute.run(w, h, 1)
 
-        self.trail_map_img.use(location=0)
+        next_trail_map.use(location=0)
         self.quad_fs.render(self.quad_program)
+        self.curr_trail_map = next_trail_map_index
 
 
 def window():
