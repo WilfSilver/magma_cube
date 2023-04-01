@@ -34,7 +34,7 @@ def analyze_colors(image: Image.Image, TOTAL_PIXELS : int, THRESHOLDS: Tuple[flo
     return __inner
 
 
-def load_food(filename: str, FOOD_POINT_RATIO=0.10, ACCEPTABLE_DELTA=0.05) -> Image.Image:
+def load_food(filename: str, MAX_PASSES=16, FOOD_POINT_RATIO=0.10, ACCEPTABLE_DELTA=0.05) -> Image.Image:
     """
     Gets food points from the bright spots of an image.
 
@@ -48,7 +48,7 @@ def load_food(filename: str, FOOD_POINT_RATIO=0.10, ACCEPTABLE_DELTA=0.05) -> Im
         TOTAL_PIXELS = reduce(lambda x, y: x * y, image.size)
         COUNT_THRESHOLDS = (TOTAL_PIXELS * (FOOD_POINT_RATIO - ACCEPTABLE_DELTA), TOTAL_PIXELS * (FOOD_POINT_RATIO + ACCEPTABLE_DELTA), TOTAL_PIXELS * FOOD_POINT_RATIO)
 
-        elem = min(map(analyze_colors(image, TOTAL_PIXELS=TOTAL_PIXELS, THRESHOLDS=COUNT_THRESHOLDS), range(2, 16)), key=lambda t: t[1]) # type: ignore
+        elem = min(map(analyze_colors(image, TOTAL_PIXELS=TOTAL_PIXELS, THRESHOLDS=COUNT_THRESHOLDS), range(2, MAX_PASSES)), key=lambda t: t[1]) # type: ignore
         print(f"DEBUG: {elem[1] / TOTAL_PIXELS * 100}% off target ratio.")
 
         return clamp_image(image, elem[0], elem[2])

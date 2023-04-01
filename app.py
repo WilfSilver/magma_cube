@@ -9,6 +9,8 @@ import numpy as np
 from random import randint, random
 
 
+ENABLE_BIRB = False
+
 from process_image import load_food
 
 def gl_version(version_string="4.4"):
@@ -88,7 +90,7 @@ class MagmaWindow(mglw.WindowConfig):
         self.quad_fs = mglw.geometry.quad_fs()
 
         # Load food!
-        food = load_food("birb.png")
+        food = load_food("birb.png", MAX_PASSES=(16 if ENABLE_BIRB else 4))
         self.food_texture = self.ctx.texture(food.size, 3, food.tobytes(), alignment=4)
         self.food_texture.filter = mgl.BLEND, mgl.BLEND
 
@@ -129,6 +131,7 @@ class MagmaWindow(mglw.WindowConfig):
         next_trail_map.use(location=0)
         self.food_texture.use(location=1)
         self.quad_program["textures"] = [0, 1]
+        self.quad_program["enable_birb"] = False
 
         # print(dir(self.quad_program))
         self.quad_fs.render(self.quad_program)
