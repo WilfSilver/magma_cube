@@ -53,10 +53,10 @@ void main() {
     }
 
     agents[id].pos = new_pos;
-    // for (int x = -1; x < 2; x++) {
-    //     for (int y = -1; y < 2; y++) {
-    //         imageStore(trail_map, ivec2(new_pos.x + x, new_pos.y + y), vec4(1.0, 1.0, 1.0, 1.0));
-    //     }
-    // }
-    imageStore(trail_map, new_pos, vec4(1.0, 1.0, 1.0, 1.0));
+    for (int x = -1; x < 2; x++) {
+        for (int y = -1; y < 2; y++) {
+            imageStore(trail_map, ivec2(new_pos.x + x, new_pos.y + y), vec4(1.0, 1.0, 1.0, 1.0));
+        }
+    }
+    // imageStore(trail_map, new_pos, vec4(1.0, 1.0, 1.0, 1.0));
 }
