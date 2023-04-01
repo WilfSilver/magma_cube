@@ -21,6 +21,7 @@ class Engine:
         self.computeShader = self.CreateComputeShader()
 
         glUseProgram(self.shader)
+        self.CreateBG()
 
     def CreateBG(self, rgba=np.ones(4, np.uint8)):
         #[x, y]
