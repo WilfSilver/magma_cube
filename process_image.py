@@ -34,7 +34,7 @@ def analyze_colors(image: Image.Image, TOTAL_PIXELS : int, THRESHOLDS: Tuple[flo
     return __inner
 
 
-def food_points(filename: str, FOOD_POINT_RATIO=0.10, ACCEPTABLE_DELTA=0.05) -> Image.Image:
+def load_food(filename: str, FOOD_POINT_RATIO=0.10, ACCEPTABLE_DELTA=0.05) -> Image.Image:
     """
     Gets food points from the bright spots of an image.
 
@@ -59,9 +59,9 @@ def clamp_image(original_image: Image.Image, image: Image.Image, pallete_color: 
     for index, pixel in np.ndenumerate(image):
         original_image.putpixel((index[1], index[0]), (255, 255, 255) if (pixel == pallete_color) else (0, 0, 0))
 
-    return original_image
+    return original_image.rotate(180)
 
 
 if __name__ == "__main__":
     import sys
-    food_points(f"{sys.argv[1]}").save(f"clamped-{sys.argv[1]}")
+    load_food(f"{sys.argv[1]}").save(f"clamped-{sys.argv[1]}")

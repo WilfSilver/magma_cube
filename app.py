@@ -9,6 +9,8 @@ import numpy as np
 from random import randint, random
 
 
+from process_image import load_food
+
 def gl_version(version_string="4.4"):
     version = version_string.split(".")
     return tuple(int(i) for i in version)
@@ -43,7 +45,8 @@ class MagmaWindow(mglw.WindowConfig):
 
         self.quad_program = self.ctx.program(
             vertex_shader=get_shader('vertex'),
-            fragment_shader=get_shader('fragment'),
+            # fragment_shader=get_shader('fragment'),
+            fragment_shader=get_shader('compositor-fragment'),
         )
 
         self.agent = self.ctx.compute_shader(get_shader("agent"))
@@ -84,8 +87,14 @@ class MagmaWindow(mglw.WindowConfig):
 
         self.quad_fs = mglw.geometry.quad_fs()
 
+        # Load food!
+        food = load_food("birb.png")
+        self.food_texture = self.ctx.texture(food.size, 3, food.tobytes(), alignment=4)
+        self.food_texture.filter = mgl.BLEND, mgl.BLEND
+
     def __del__(self):
         self.agent.release()
+        self.food_texture.release()
 
     def render(self, time, frame_time):
         self.ctx.clear(0, 0, 0)
@@ -98,13 +107,14 @@ class MagmaWindow(mglw.WindowConfig):
         trail_map = self.trail_maps[self.curr_trail_map]
         next_trail_map_index = 1 if self.curr_trail_map == 0 else 0
         next_trail_map = self.trail_maps[next_trail_map_index]
-        w, h = trail_map.size
+        w, h = self.food_texture.size
 
         self.agent['width'] = w
         self.agent['height'] = h
         self.agent['delta_time'] = frame_time
 
         trail_map.bind_to_image(0, read=True, write=True)
+        self.food_texture.bind_to_image(1, read=True, write=False)
         self.agents_buffer.bind_to_storage_buffer(0)
         self.debug_buffer.bind_to_storage_buffer(1)
         self.agent.run(self.agents_num, 1, 1)
@@ -116,8 +126,11 @@ class MagmaWindow(mglw.WindowConfig):
         self.blur_compute['delta_time'] = frame_time
         next_trail_map.bind_to_image(1, read=False, write=True)
         self.blur_compute.run(w, h, 1)
-
         next_trail_map.use(location=0)
+        self.food_texture.use(location=1)
+        self.quad_program["textures"] = [0, 1]
+
+        # print(dir(self.quad_program))
         self.quad_fs.render(self.quad_program)
         self.curr_trail_map = next_trail_map_index
 
