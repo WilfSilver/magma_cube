@@ -47,8 +47,8 @@ class MagmaWindow(mglw.WindowConfig):
 
         self.quad_program = self.ctx.program(
             vertex_shader=get_shader('vertex'),
-            # fragment_shader=get_shader('fragment'),
-            fragment_shader=get_shader('compositor-fragment'),
+            fragment_shader=get_shader('fragment'),
+            # fragment_shader=get_shader('compositor-fragment'),
         )
 
         self.agent = self.ctx.compute_shader(get_shader("agent"))
@@ -70,7 +70,7 @@ class MagmaWindow(mglw.WindowConfig):
         print(a)
 
         self.agent['num_agents'] = self.agents_num
-        self.agent['move_speed'] = 100
+        self.agent['move_speed'] = 90
         self.agent['sensor_angle_spacing'] = math.pi / 9
         self.agent['turn_speed'] = 2 * math.pi * 20
 
@@ -85,7 +85,7 @@ class MagmaWindow(mglw.WindowConfig):
         self.curr_trail_map = 0
 
         self.blur_compute = self.ctx.compute_shader(get_shader('blur'))
-        self.blur_compute['decay_rate'] = 5
+        self.blur_compute['decay_rate'] = 1
 
         self.quad_fs = mglw.geometry.quad_fs()
 
@@ -96,27 +96,23 @@ class MagmaWindow(mglw.WindowConfig):
 
     def __del__(self):
         self.agent.release()
-        self.food_texture.release()
+        # self.food_texture.release()
 
     def render(self, time, frame_time):
         self.ctx.clear(0, 0, 0)
 
-        try:
-            self.agent['time'].value = time
-        except Exception:
-            self.agent['time'].value = 100
-
         trail_map = self.trail_maps[self.curr_trail_map]
         next_trail_map_index = 1 if self.curr_trail_map == 0 else 0
         next_trail_map = self.trail_maps[next_trail_map_index]
-        w, h = self.food_texture.size
+        w, h = trail_map.size
 
+        self.agent['random_seed'] = random()
         self.agent['width'] = w
         self.agent['height'] = h
         self.agent['delta_time'] = frame_time
 
         trail_map.bind_to_image(0, read=True, write=True)
-        self.food_texture.bind_to_image(1, read=True, write=False)
+        # self.food_texture.bind_to_image(1, read=True, write=False)
         self.agents_buffer.bind_to_storage_buffer(0)
         self.debug_buffer.bind_to_storage_buffer(1)
         self.agent.run(self.agents_num, 1, 1)
