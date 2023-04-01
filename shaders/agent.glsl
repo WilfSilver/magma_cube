@@ -1,46 +1,67 @@
-#pragma kernel update
 #version 460
 
 #define PI 3.14159265358979323846
-#define PHI 1.61803398874989484820459;
+#define PHI 1.61803398874989484820459
 
-struct Agent {
-    uint2 coord;
-    float angle;
-}
+layout(local_size_x = 1, local_size_y = 1) in;
+layout(std430, binding=0) buffer buffer_0 {
+    ivec2 agents_coords[];
+};
 
-StructuredBuffer<Agent> agents;
-RWTexture2D<float4>  trail_map;
-uint resolution;
-uint num_agents;
-uint width, height;
-float move_speed;
-float delta_time;
+layout(std430, binding=1) buffer buffer_1 {
+    float agents_dirs[];
+};
+layout(rgba8, location=0) uniform image2D trail_map;
+
+uniform uint num_agents;
+uniform uint width;
+uniform uint height;
+uniform float move_speed;
+uniform float delta_time;
+uniform float time;
+
 
 // taken front https://stackoverflow.com/questions/4200224/random-noise-functions-for-glsl
 float hash_noise(vec2 xy, float seed){
-    return fract(tan(distance(xy*PHI, xy) * seed) * xy.x);
+    return fract(tan(distance(xy * PHI, xy) * seed) * xy.x);
 }
 
 float rand(vec2 co) {
     return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
 }
 
-[numthreads(1024, 1, 1)]
-void update(uint3 id : SV_DispatchThreadID) {
-    if (id.x >= num_agents) { return; }
-    Agent a = agents[id.x];
-    ivec2 screen_size = imageSize(img_output);
-    float rand = hash_noise(agent.coord, delta_time);
+float scale_to_range(float r) {
+    return r; // / 2 + 0.01; // / 4294967295.0;
+}
 
-    float2 dir = float2(cos(a.angle), sin(a.angle));
-    float2 new_pos = agent.position + dir * move_speed * delta_time;
+void main() {
+    uint id = gl_GlobalInvocationID.x;
 
-    if (new_pos < 0 || new_pos.x >= width || new_pos.y < 0 || new_pos.y >= height) {
-        new_pos.x = min(width - 0.01, max(0, new_pos.x));
-        new_pos.y = min(height - 0.01, max(0, height.x));
-        agents[id.x].angle = scaleToRange01(rand) * 2 * PI;
+    if (id >= num_agents) { return; }
+
+    // Agent a = agents[id];
+    ivec2 a_pos = agents_coords[id];
+    float a_dir = agents_dirs[id];
+    float rand = hash_noise(a_pos, time);
+
+    vec2 dir = vec2(cos(a_dir), sin(a_dir));
+    ivec2 new_pos = ivec2(a_pos + dir * move_speed * delta_time);
+
+    if (new_pos.x < 0 || new_pos.x >= width || new_pos.y < 0 || new_pos.y >= height) {
+        new_pos.x = int(round(min(width - 1, max(0, new_pos.x))));
+        new_pos.y = int(round(min(height - 1, max(0, new_pos.y))));
+        agents_dirs[id] = scale_to_range(rand) * 2 * PI;
     }
-    agents[id.x].position = new_pos;
-    trail_map[int2(new_pos.x, new_pos.y)] = 1;
+
+    agents_coords[id] = new_pos;
+    imageStore(trail_map, new_pos, vec4(1.0, 1.0, 1.0, 1.0));
+    new_pos.x += 1;
+    imageStore(trail_map, new_pos, vec4(1.0, 1.0, 1.0, 1.0));
+    new_pos.x -= 2;
+    imageStore(trail_map, new_pos, vec4(1.0, 1.0, 1.0, 1.0));
+    new_pos.x += 1;
+    new_pos.y += 1;
+    imageStore(trail_map, new_pos, vec4(1.0, 1.0, 1.0, 1.0));
+    new_pos.y -= 2;
+    imageStore(trail_map, new_pos, vec4(1.0, 1.0, 1.0, 1.0));
 }

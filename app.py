@@ -2,6 +2,7 @@ import traceback as tb
 
 import colorama
 import typing
+import math
 import moderngl as mgl
 import moderngl_window as mglw
 import numpy as np
@@ -24,7 +25,8 @@ def panic(msg: str) -> None:
 
 
 def get_shader(filename: str) -> str:
-    with open(filename, 'r', encoding="utf8") as shader_file:
+    path = './shaders/' + filename + '.glsl'
+    with open(path, 'r', encoding="utf8") as shader_file:
         return shader_file.read()
 
 
@@ -39,44 +41,38 @@ class MagmaWindow(mglw.WindowConfig):
         super().__init__(*args, **kwargs)
 
         self.quad_program = self.ctx.program(
-            vertex_shader="""
-            #version 330
-            in vec3 in_position;
-            in vec2 in_texcoord_0;
-            out vec2 uv;
-            void main() {
-                gl_Position = vec4(in_position, 1.0);
-                uv = in_texcoord_0;
-            }
-            """,
-            fragment_shader="""
-            #version 330
-            uniform sampler2D texture0;
-            out vec4 fragColor;
-            in vec2 uv;
-            void main() {
-                fragColor = texture(texture0, uv);
-            }
-            """,
+            vertex_shader=get_shader('vertex'),
+            fragment_shader=get_shader('fragment'),
         )
 
-        self.agent = self.ctx.compute_shader(get_shader("shaders/test.glsl"))
-        self.agent['tex'] = 0
+        self.agent = self.ctx.compute_shader(get_shader("agent"))
+        self.agent['trail_map'] = 0
+        self.agents_num = 100
+        info = np.array([500 for _ in range(2 * self.agents_num)], np.int32)
+        # info = np.random.uniform(0.0, self.window_size[1], 2 * self.agents_num).astype(np.int64)
+        print(info)
+        print(len(info))
+        self.agents_coords_buffer = self.ctx.buffer(data=info)
+        info = np.array([2 * x * math.pi / self.agents_num for x in range(self.agents_num)], np.float32)
+        self.agents_dirs_buffer = self.ctx.buffer(data=info)
+        print(info)
+        self.agent['num_agents'] = self.agents_num
+        self.agent['move_speed'] = 100
         # self.out_color = np.array(
         #     [100, 0, 0, 255] * self.window_size[0] * self.window_size[1],
         #     dtype=np.uint8
         # )
-        self.out_texture = self.ctx.texture(
+        self.trail_map_img = self.ctx.texture(
             self.window_size,
             4,
         )
-        self.out_texture.filter = mgl.NEAREST, mgl.NEAREST
+        self.trail_map_img.filter = mgl.NEAREST, mgl.NEAREST
         self.quad_fs = mglw.geometry.quad_fs()
 
     def __del__(self):
         self.agent.release()
 
-    def render(self, time, frametime):
+    def render(self, time, frame_time):
         self.ctx.clear(0, 0, 0)
 
         # self.agent['width'].value = self.window_size[0]
@@ -86,14 +82,25 @@ class MagmaWindow(mglw.WindowConfig):
         except Exception:
             self.agent['time'].value = 100
             pass
-        w, h = self.out_texture.size
+
+        w, h = self.trail_map_img.size
+
+        self.agent['width'] = w
+        self.agent['height'] = h
+        self.agent['delta_time'] = frame_time
+
         # gw, gh = 16, 16
         # nx, ny, nz = int(w/gw), int(h/gh), 1
-        self.out_texture.bind_to_image(0, read=False, write=True)
-        self.agent.run(w, h, 1)
+        self.trail_map_img.bind_to_image(0, read=True, write=True)
+        self.agents_coords_buffer.bind_to_storage_buffer(0)
+        self.agents_dirs_buffer.bind_to_storage_buffer(1)
+        self.agent.run(self.agents_num, 1, 1)
 
-        # a = np.frombuffer(self.out_texture.read(), dtype=np.uint8)
-        self.out_texture.use(location=0)
+        output = np.frombuffer(self.agents_coords_buffer.read(), dtype=np.int32)
+        # print(output)
+
+        # a = np.frombuffer(self.trail_map_img.read(), dtype=np.uint8)
+        self.trail_map_img.use(location=0)
         self.quad_fs.render(self.quad_program)
         # ctx = self.ctx
 
