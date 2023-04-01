@@ -47,8 +47,8 @@ class MagmaWindow(mglw.WindowConfig):
 
         self.quad_program = self.ctx.program(
             vertex_shader=get_shader('vertex'),
-            fragment_shader=get_shader('fragment'),
-            # fragment_shader=get_shader('compositor-fragment'),
+            # fragment_shader=get_shader('fragment'),
+            fragment_shader=get_shader('compositor-fragment'),
         )
 
         self.agent = self.ctx.compute_shader(get_shader("agent"))
@@ -71,8 +71,12 @@ class MagmaWindow(mglw.WindowConfig):
 
         self.agent['num_agents'] = self.agents_num
         self.agent['move_speed'] = 90
+
         self.agent['sensor_angle_spacing'] = math.pi / 9
         self.agent['turn_speed'] = 2 * math.pi * 20
+        self.agent['sensor_offset_dist'] = 10.0
+        self.agent['sensor_size'] = 5
+
 
         self.trail_maps = [
             self.ctx.texture(
@@ -90,9 +94,12 @@ class MagmaWindow(mglw.WindowConfig):
         self.quad_fs = mglw.geometry.quad_fs()
 
         # Load food!
-        food = load_food("birb.png", MAX_PASSES=(16 if ENABLE_BIRB else 4))
-        self.food_texture = self.ctx.texture(food.size, 3, food.tobytes(), alignment=4)
-        self.food_texture.filter = mgl.BLEND, mgl.BLEND
+        if ENABLE_BIRB:
+            food = load_food("birb.png", MAX_PASSES=16)
+            self.food_texture = self.ctx.texture(food.size, 3, food.tobytes(), alignment=4)
+            self.food_texture.filter = mgl.BLEND, mgl.BLEND
+        else:
+            self.food_texture = None
 
     def __del__(self):
         self.agent.release()
@@ -125,7 +132,8 @@ class MagmaWindow(mglw.WindowConfig):
         next_trail_map.bind_to_image(1, read=False, write=True)
         self.blur_compute.run(w, h, 1)
         next_trail_map.use(location=0)
-        self.food_texture.use(location=1)
+        if ENABLE_BIRB:
+            self.food_texture.use(location=1)
         self.quad_program["textures"] = [0, 1]
         self.quad_program["enable_birb"] = False
 

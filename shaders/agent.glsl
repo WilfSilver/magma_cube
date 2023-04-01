@@ -9,14 +9,17 @@ struct Agent {
     float angle;
 };
 
+uniform float sensor_angle_spacing;
+uniform float turn_speed;
+uniform float sensor_offset_dist;
+uniform uint sensor_size;
+
 uniform uint num_agents;
 uniform uint width;
 uniform uint height;
 uniform float move_speed;
 uniform float delta_time;
 uniform float random_seed;
-uniform float sensor_angle_spacing;
-uniform float turn_speed;
 
 layout(local_size_x = 1, local_size_y = 1) in;
 layout(std430, binding=0) buffer buffer_0 {
@@ -46,13 +49,25 @@ vec4 image_load_default(image2D img, ivec2 pos) {
 
 float sense(Agent a, float angle_offset) {
     float angle = a.angle + angle_offset;
-
     vec2 dir = vec2(cos(angle), sin(angle));
-    ivec2 pos = ivec2(agent_pos(a) + 3 * dir * move_speed * delta_time);
+    ivec2 centre = agent_pos(a) + ivec2(dir * sensor_offset_dist);
+    float sum = 0;
 
-    vec4 colour = image_load_default(trail_map, pos);
+    for (int x = -int(sensor_size); x <= int(sensor_size); x++) {
+        for (int y = -int(sensor_size); y <= int(sensor_size); y++) {
+            ivec2 pos = centre + ivec2(x, y);
 
-    return colour.x;
+            vec4 colour = image_load_default(trail_map, pos);
+            sum += colour.x;
+        }
+    }
+
+    // ivec2 pos = ivec2(agent_pos(a) + 3 * dir * move_speed * delta_time);
+
+    // vec4 colour = image_load_default(trail_map, pos);
+
+    // return colour.x;
+    return sum;
 }
 
 void main() {
@@ -72,23 +87,22 @@ void main() {
         new_pos.x = int(round(min(width, max(0, new_pos.x))));
         new_pos.y = int(round(min(height, max(0, new_pos.y))));
         agents[id].angle = r * 2 * PI;
-    } else {
-        a.x = new_pos.x;
-        a.y = new_pos.y;
-        float weight_forward = sense(a, 0);
-        float weight_left = sense(a, sensor_angle_spacing);
-        float weight_right = sense(a, -sensor_angle_spacing);
+    }
 
-        float turn_rand = r;
-        if (weight_forward > weight_left && weight_forward > weight_right) {
-            agents[id].angle += 0;
-        } else if (weight_forward < weight_left && weight_forward < weight_right) {
-            agents[id].angle += (turn_rand - 0.5) * 4 * turn_speed * delta_time;
-        } else if (weight_left > weight_right) {
-            agents[id].angle += turn_rand * turn_speed * delta_time;
-        } else if (weight_right > weight_left) {
-            agents[id].angle -= turn_rand * turn_speed * delta_time;
-        }
+    a.x = new_pos.x;
+    a.y = new_pos.y;
+
+    float weight_forward = sense(a, 0);
+    float weight_left = sense(a, sensor_angle_spacing);
+    float weight_right = sense(a, -sensor_angle_spacing);
+
+    if (weight_forward >= weight_left && weight_forward >= weight_right) {
+    } else if (weight_forward < weight_left && weight_forward < weight_right) {
+        agents[id].angle += (r - 0.5) * 2 * turn_speed * delta_time;
+    } else if (weight_left > weight_right) {
+        agents[id].angle += r * turn_speed * delta_time;
+    } else if (weight_right > weight_left) {
+        agents[id].angle -= r * turn_speed * delta_time;
     }
 
     agents[id].x = new_pos.x;
