@@ -67,6 +67,9 @@ class MagmaWindow(mglw.WindowConfig):
             4,
         )
         self.trail_map_img.filter = mgl.NEAREST, mgl.NEAREST
+
+        self.blur_compute = self.ctx.compute_shader(get_shader('blur'))
+
         self.quad_fs = mglw.geometry.quad_fs()
 
     def __del__(self):
@@ -90,6 +93,8 @@ class MagmaWindow(mglw.WindowConfig):
         self.trail_map_img.bind_to_image(0, read=True, write=True)
         self.agents_buffer.bind_to_storage_buffer(0)
         self.agent.run(self.agents_num, 1, 1)
+
+        self.blur_compute.run(w, h, 1)
 
         self.trail_map_img.use(location=0)
         self.quad_fs.render(self.quad_program)
