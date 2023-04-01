@@ -80,7 +80,7 @@ void main() {
     float r = hash_noise(agent_pos(a) + width, random_seed);
 
     vec2 dir = vec2(cos(a.angle), sin(a.angle));
-    ivec2 new_pos = ivec2(agent_pos(a) + dir * move_speed * delta_time);
+    ivec2 new_pos = ivec2(round(agent_pos(a) + dir * move_speed * delta_time));
 
     if (new_pos.x <= 0 || new_pos.x >= width || new_pos.y <= 0 || new_pos.y >= height) {
         debug_out[id] = agent_pos(a);
