@@ -1,11 +1,12 @@
 import traceback as tb
 
 import colorama
-import typing
 import math
 import moderngl as mgl
 import moderngl_window as mglw
 import numpy as np
+
+from random import randint, random
 
 
 def gl_version(version_string="4.4"):
@@ -47,21 +48,20 @@ class MagmaWindow(mglw.WindowConfig):
 
         self.agent = self.ctx.compute_shader(get_shader("agent"))
         self.agent['trail_map'] = 0
-        self.agents_num = 100
-        info = np.array([500 for _ in range(2 * self.agents_num)], np.int32)
-        # info = np.random.uniform(0.0, self.window_size[1], 2 * self.agents_num).astype(np.int64)
+        self.agents_num = 400
+
+        info = np.array([
+            (randint(1, self.window_size[0] - 1),
+             randint(1, self.window_size[1] - 1),
+             2 * math.pi * random())
+            for _ in range(self.agents_num)], np.dtype("i4, i4, f4"))
         print(info)
         print(len(info))
-        self.agents_coords_buffer = self.ctx.buffer(data=info)
-        info = np.array([2 * x * math.pi / self.agents_num for x in range(self.agents_num)], np.float32)
-        self.agents_dirs_buffer = self.ctx.buffer(data=info)
-        print(info)
+        self.agents_buffer = self.ctx.buffer(data=info)
+
         self.agent['num_agents'] = self.agents_num
         self.agent['move_speed'] = 100
-        # self.out_color = np.array(
-        #     [100, 0, 0, 255] * self.window_size[0] * self.window_size[1],
-        #     dtype=np.uint8
-        # )
+
         self.trail_map_img = self.ctx.texture(
             self.window_size,
             4,
@@ -75,13 +75,11 @@ class MagmaWindow(mglw.WindowConfig):
     def render(self, time, frame_time):
         self.ctx.clear(0, 0, 0)
 
-        # self.agent['width'].value = self.window_size[0]
-        # self.agent['height'].value = self.window_size[1]
         try:
             self.agent['time'].value = time
         except Exception:
-            self.agent['time'].value = 100
             pass
+            # self.agent['time'].value = 100
 
         w, h = self.trail_map_img.size
 
@@ -89,22 +87,12 @@ class MagmaWindow(mglw.WindowConfig):
         self.agent['height'] = h
         self.agent['delta_time'] = frame_time
 
-        # gw, gh = 16, 16
-        # nx, ny, nz = int(w/gw), int(h/gh), 1
         self.trail_map_img.bind_to_image(0, read=True, write=True)
-        self.agents_coords_buffer.bind_to_storage_buffer(0)
-        self.agents_dirs_buffer.bind_to_storage_buffer(1)
+        self.agents_buffer.bind_to_storage_buffer(0)
         self.agent.run(self.agents_num, 1, 1)
 
-        output = np.frombuffer(self.agents_coords_buffer.read(), dtype=np.int32)
-        # print(output)
-
-        # a = np.frombuffer(self.trail_map_img.read(), dtype=np.uint8)
         self.trail_map_img.use(location=0)
         self.quad_fs.render(self.quad_program)
-        # ctx = self.ctx
-
-        # self.ctx.clear(1.0, 1.0, 0.0, 0.0)
 
 
 def window():
