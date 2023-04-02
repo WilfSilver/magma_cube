@@ -7,7 +7,6 @@ struct Agent {
     int x;
     int y;
     float angle;
-    float hunger;
 };
 
 uniform float sensor_angle_spacing;
@@ -21,9 +20,7 @@ uniform uint height;
 uniform float move_speed;
 uniform float delta_time;
 uniform float random_seed;
-uniform float hunger_reset;
-uniform bool eat_food;
-uniform bool enable_food;
+uniform float time;
 
 layout(local_size_x = 1, local_size_y = 1) in;
 layout(std430, binding=0) buffer buffer_0 {
@@ -53,18 +50,6 @@ vec4 image_load_default(image2D img, ivec2 pos) {
     return imageLoad(img, pos);
 }
 
-void consumeFood(Agent a) {
-    ivec2 pos = agent_pos(a);
-    vec4 colour = imageLoad(food_map, pos);
-    if (colour == vec4(0.0, 1.0, 0.0, 1.0)) {
-        if (eat_food) {
-            imageStore(food_map, pos, vec4(0.0));
-        }
-        a.hunger = hunger_reset;
-    }
-    return;
-}
-
 float sense_with_map(Agent a, float angle_offset, image2D map) {
     float angle = a.angle + angle_offset;
     vec2 dir = vec2(cos(angle), sin(angle));
@@ -84,11 +69,7 @@ float sense_with_map(Agent a, float angle_offset, image2D map) {
 }
 
 float sense(Agent a, float angle_offset) {
-    if (enable_food && a.hunger >= 0.4) {
-        return sense_with_map(a, angle_offset, trail_map);
-    } else {
-        return sense_with_map(a, angle_offset, food_trail_map);
-    }
+    return sense_with_map(a, angle_offset, food_trail_map);
 }
 
 void main() {
@@ -101,13 +82,10 @@ void main() {
     Agent a = agents[id];
     float r = hash_noise(agent_pos(a) + width, random_seed);
 
-    if (enable_food) { consumeFood(a); }
-
     vec2 dir = vec2(cos(a.angle), sin(a.angle));
     ivec2 new_pos = ivec2(round(agent_pos(a) + dir * move_speed * delta_time));
 
     if (new_pos.x <= 0 || new_pos.x >= width || new_pos.y <= 0 || new_pos.y >= height) {
-        debug_out[id] = vec3(agent_pos(a), a.hunger);
         new_pos.x = int(round(min(width, max(0, new_pos.x))));
         new_pos.y = int(round(min(height, max(0, new_pos.y))));
         agents[id].angle = r * 2 * PI;
@@ -115,7 +93,6 @@ void main() {
 
     a.x = new_pos.x;
     a.y = new_pos.y;
-    float new_hunger = max(0, a.hunger - 0.005);
 
     float weight_forward = sense(a, 0);
     float weight_left = sense(a, sensor_angle_spacing);
@@ -132,12 +109,11 @@ void main() {
 
     agents[id].x = new_pos.x;
     agents[id].y = new_pos.y;
-    agents[id].hunger = new_hunger;
     for (int x = 0; x < 2; x++) {
         for (int y = 0; y < 2; y++) {
-            imageStore(trail_map, ivec2(new_pos.x + x, new_pos.y + y), vec4(a.hunger, 1.0 - a.hunger, 1.0 - a.hunger, 1.0));
+            imageStore(trail_map, ivec2(new_pos.x + x, new_pos.y + y), vec4(0.5, cos(time), sin(time), 1.0));
         }
     }
-    imageStore(trail_map, ivec2(new_pos.x, new_pos.y), vec4(a.hunger, 1.0 - a.hunger, 1.0 - a.hunger, 1.0));
+    imageStore(trail_map, ivec2(new_pos.x, new_pos.y), vec4(0.5, cos(time), sin(time), 1.0));
     // imageStore(trail_map, new_pos, vec4(1.0, 1.0, 1.0, 1.0));
 }

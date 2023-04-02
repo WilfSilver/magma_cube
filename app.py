@@ -63,8 +63,8 @@ class MagmaWindow(mglw.WindowConfig):
         self.debug_buffer = self.ctx.buffer(data=info)
         info = np.array([
             (tuple(randint(opts['internal']['boundry'], x - opts['internal']['boundry']) for x in self.window_size),
-             2 * math.pi * random(), 1.0)
-            for _ in range(self.agents_num)], np.dtype("(2)i4, f4, f4"))
+             2 * math.pi * random())
+            for _ in range(self.agents_num)], np.dtype("(2)i4, f4"))
 
         self.agents_buffer = self.ctx.buffer(data=info)
 
@@ -74,8 +74,6 @@ class MagmaWindow(mglw.WindowConfig):
             if key == 'internal':
                 continue
             self.agent[key] = v
-
-        self.agent['enable_food'] = True
 
         self.trail_maps = [
             self.ctx.texture(
@@ -115,6 +113,11 @@ class MagmaWindow(mglw.WindowConfig):
         next_trail_map = self.trail_maps[next_trail_map_index]
 
         w, h = trail_map.size
+
+        try:
+            self.agent['time'] = time
+        except Exception:
+            self.agent['time'] = 0
 
         self.agent['random_seed'] = random()
         self.agent['width'] = w
