@@ -191,6 +191,17 @@ if __name__ == "__main__":
                 'boundry': 200
             }
         },
+        {
+            'num_agents': 40000,
+            'move_speed': 65,
+            'sensor_angle_spacing': 2 * math.pi / 9,
+            'turn_speed': 2 * math.pi * 10,
+            'sensor_offset_dist': 15.0,
+            'sensor_size': 5,
+            'internal': {
+                'boundry': 200
+            }
+        },
     ]
     p = int(input("Preset: "))
     opts = presets[p]
