@@ -61,10 +61,25 @@ class MagmaWindow(mglw.WindowConfig):
             (0, 0, 0.0)
             for _ in range(self.agents_num)], np.dtype("i4, i4, f4"))
         self.debug_buffer = self.ctx.buffer(data=info)
-        info = np.array([
-            (tuple(randint(opts['internal']['boundry'], x - opts['internal']['boundry']) for x in self.window_size),
-             2 * math.pi * random(), randint(0, opts['internal']['species'] - 1))
-            for _ in range(self.agents_num)], np.dtype("(2)i4, f4, u4"))
+        if opts['internal']['spawn']:
+            points = []
+            for s in range(opts['internal']['species']):
+                print(s)
+                centre = tuple(randint(200, x - 200) for x in self.window_size)
+                radius = randint(100, 150)
+                count = 0
+                while count < self.agents_num / opts['internal']['species']:
+                    x, y = randint(0, self.window_size[0]), randint(0, self.window_size[1])
+                    if (((x - centre[0]) ** 2) + ((y - centre[1]) ** 2)) ** 0.5 >= 1.25*radius and (((x - centre[0]) ** 2) + ((y - centre[1]) ** 2)) ** 0.5 <= 1.5*radius:
+                        points.append(((x, y), 2 * math.pi * random(), s))
+                        count += 1
+
+            info = np.array(points, np.dtype("(2)i4, f4, u4"))
+        else:
+            info = np.array([
+                (tuple(randint(opts['internal']['boundry'], x - opts['internal']['boundry']) for x in self.window_size),
+                2 * math.pi * random(), randint(0, opts['internal']['species'] - 1))
+                for _ in range(self.agents_num)], np.dtype("(2)i4, f4, u4"))
 
         self.agents_buffer = self.ctx.buffer(data=info)
 
@@ -155,6 +170,7 @@ if __name__ == "__main__":
             'internal': {
                 'boundry': 0,
                 'species': 3,
+                'spawn': False,
             }
         },
         {
@@ -168,6 +184,7 @@ if __name__ == "__main__":
             'internal': {
                 'boundry': 200,
                 'species': 3,
+                'spawn': False,
             }
         },
         {
@@ -181,6 +198,7 @@ if __name__ == "__main__":
             'internal': {
                 'boundry': 200,
                 'species': 3,
+                'spawn': False,
             }
         },
         {
@@ -194,6 +212,35 @@ if __name__ == "__main__":
             'internal': {
                 'boundry': 200,
                 'species': 2,
+                'spawn': False,
+            }
+        },
+        {
+            'num_agents': 40000,
+            'move_speed': 70,
+            'sensor_angle_spacing': math.pi / 9,
+            'turn_speed': 2 * math.pi * 20,
+            'sensor_offset_dist': 15.0,
+            'sensor_size': 5,
+            'repel': True,
+            'internal': {
+                'boundry': 0,
+                'species': 2,
+                'spawn': True,
+            }
+        },
+        {
+            'num_agents': 40000,
+            'move_speed': 70,
+            'sensor_angle_spacing': math.pi / 9,
+            'turn_speed': 2 * math.pi * 20,
+            'sensor_offset_dist': 15.0,
+            'sensor_size': 5,
+            'repel': True,
+            'internal': {
+                'boundry': 0,
+                'species': 3,
+                'spawn': True,
             }
         },
     ]
