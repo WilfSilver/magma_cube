@@ -37,7 +37,8 @@ def get_shader(filename: str) -> str:
 
 class MagmaWindow(mglw.WindowConfig):
     gl_version = gl_version(version_string="4.6")
-    window_size = (1920, 1080)
+    # window_size = (1920, 1080)
+    window_size = (1280, 720)
     aspect_ratio = 16 / 9
     title = "Magma Window"
     resizable = False
@@ -53,11 +54,11 @@ class MagmaWindow(mglw.WindowConfig):
 
         self.agent = self.ctx.compute_shader(get_shader("agent"))
         self.agent['trail_map'] = 0
-        self.agents_num = 40000
+        self.agents_num = 15000
 
         info = np.array([
-            (0, 0)
-            for _ in range(self.agents_num)], np.dtype("i4, i4"))
+            (0, 0, 0.0)
+            for _ in range(self.agents_num)], np.dtype("i4, i4, f4"))
         self.debug_buffer = self.ctx.buffer(data=info)
         info = np.array([
             (tuple(randint(0, x) for x in self.window_size),
@@ -68,12 +69,12 @@ class MagmaWindow(mglw.WindowConfig):
 
         a = np.frombuffer(self.agents_buffer.read(), dtype=np.dtype("i4, i4, f4, f4"))
         print(a)
-
+        self.debug_print_count = 0
         self.agent['num_agents'] = self.agents_num
         self.agent['move_speed'] = 90
 
-        self.agent['sensor_angle_spacing'] = math.pi / 9
-        self.agent['turn_speed'] = 2 * math.pi * 20
+        self.agent['sensor_angle_spacing'] = math.pi / 12
+        self.agent['turn_speed'] = 2 * math.pi * 4.5
         self.agent['sensor_offset_dist'] = 10.0
         self.agent['sensor_size'] = 5
         self.agent['enable_food'] = ENABLE_BIRB
@@ -99,7 +100,7 @@ class MagmaWindow(mglw.WindowConfig):
         # Load food!
         if ENABLE_BIRB:
             food = load_food("birb.png", MAX_PASSES=16)
-            self.food_texture = self.ctx.texture(food.size, 3, food.tobytes(), alignment=4)
+            self.food_texture = self.ctx.texture(food.size, 3, food.tobytes("raw", "RGB"))
             self.food_texture.filter = mgl.BLEND, mgl.BLEND
 
             self.food_trail_maps = [
@@ -147,9 +148,10 @@ class MagmaWindow(mglw.WindowConfig):
         self.agents_buffer.bind_to_storage_buffer(0)
         self.debug_buffer.bind_to_storage_buffer(1)
         self.agent.run(self.agents_num, 1, 1)
-
-        # a = np.frombuffer(self.debug_buffer.read(), dtype=np.dtype("i4, i4"))
-        # print(a)
+        if self.debug_print_count < 50:
+            a = np.frombuffer(self.debug_buffer.read(), dtype=np.dtype("i4, i4, f4"))
+            print(a)
+            self.debug_print_count+=1
         # input()
 
         self.blur_compute['delta_time'] = frame_time
