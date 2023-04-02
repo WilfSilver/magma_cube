@@ -46,6 +46,39 @@ class MagmaWindow(mglw.WindowConfig):
     title = "Magma Window"
     resizable = False
 
+    def key_event(self, key, action, modifiers):
+        if action == self.wnd.keys.ACTION_PRESS:
+            if key == self.wnd.keys.R:
+                points = []
+                while len(points) < self.agents_num:
+                    x, y = randint(0, self.window_size[0]), randint(0, self.window_size[1])
+                    centrex = (self.window_size[0])/2
+                    centrey = (self.window_size[1])/2
+                    radius = 125
+                    if (((x - centrex) ** 2) + ((y - centrey) ** 2)) ** 0.5 >= 1.25*radius and (((x - centrex) ** 2) + ((y - centrey) ** 2)) ** 0.5 <= 1.5*radius:
+                        points.append((x, y))
+                self.trail_maps = [
+                    self.ctx.texture(
+                        self.window_size,
+                        4,
+                    ) for _ in range(2)
+                ]
+                for m in self.trail_maps:
+                    m.filter = mgl.NEAREST, mgl.NEAREST
+                self.curr_trail_map = 0
+
+                self.blur_compute = self.ctx.compute_shader(get_shader('blur'))
+                self.blur_compute['decay_rate'] = 1
+
+                self.food_blur_compute = self.ctx.compute_shader(get_shader('food_blur'))
+                self.food_blur_compute['decay_rate'] = 1
+
+                self.quad_fs = mglw.geometry.quad_fs()
+
+                info = np.array([(points[_], 2 * math.pi * random(), 1.0) for _ in range(self.agents_num)], np.dtype("(2)i4, f4, f4"))
+
+                self.agents_buffer = self.ctx.buffer(data=info)
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
