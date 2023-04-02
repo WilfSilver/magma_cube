@@ -71,13 +71,11 @@ class MagmaWindow(mglw.WindowConfig):
         self.agents_buffer = self.ctx.buffer(data=info)
 
         self.debug_print_count = 0
-        self.agent['num_agents'] = self.agents_num
-        self.agent['move_speed'] = 100
+        for key, v in opts.items():
+            if key == 'internal':
+                break
+            self.agent[key] = v
 
-        self.agent['sensor_angle_spacing'] = math.pi / 12
-        self.agent['turn_speed'] = 2 * math.pi * 2
-        self.agent['sensor_offset_dist'] = 7.0
-        self.agent['sensor_size'] = 5
         self.agent['enable_food'] = True
 
         self.trail_maps = [
