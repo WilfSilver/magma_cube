@@ -45,7 +45,7 @@ ivec2 agent_pos(Agent a) {
     return ivec2(a.x, a.y);
 }
 
-vec4 image_load_default(image2D img, ivec2 pos) {
+vec4 image_load_default(layout(rgba8) image2D img, ivec2 pos) {
     if (pos.x < 0 || pos.x >= width || pos.y < 0 || pos.y >= height) {
         return vec4(0);
     }
@@ -65,7 +65,7 @@ void consumeFood(Agent a) {
     return;
 }
 
-float sense_with_map(Agent a, float angle_offset, image2D map) {
+float sense_with_map(Agent a, float angle_offset, layout(rgba8) image2D map) {
     float angle = a.angle + angle_offset;
     vec2 dir = vec2(cos(angle), sin(angle));
     ivec2 centre = agent_pos(a) + ivec2(dir * sensor_offset_dist);
