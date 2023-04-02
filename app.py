@@ -9,7 +9,7 @@ import numpy as np
 from random import randint, random
 
 
-ENABLE_BIRB = True
+ENABLE_BIRB = False
 
 from process_image import load_food
 
@@ -60,10 +60,7 @@ class MagmaWindow(mglw.WindowConfig):
             (0, 0, 0.0)
             for _ in range(self.agents_num)], np.dtype("i4, i4, f4"))
         self.debug_buffer = self.ctx.buffer(data=info)
-        info = np.array([
-            (tuple(randint(0, x) for x in self.window_size),
-             2 * math.pi * random(), 1.0)
-            for _ in range(self.agents_num)], np.dtype("(2)i4, f4, f4"))
+        info = np.array([(tuple((x/2) for x in self.window_size), 2 * math.pi * random(), 1.0) for _ in range(self.agents_num)], np.dtype("(2)i4, f4, f4"))
 
         self.agents_buffer = self.ctx.buffer(data=info)
 
@@ -71,11 +68,11 @@ class MagmaWindow(mglw.WindowConfig):
         print(a)
         self.debug_print_count = 0
         self.agent['num_agents'] = self.agents_num
-        self.agent['move_speed'] = 90
+        self.agent['move_speed'] = 60
 
-        self.agent['sensor_angle_spacing'] = math.pi / 12
-        self.agent['turn_speed'] = 2 * math.pi * 4.5
-        self.agent['sensor_offset_dist'] = 10.0
+        self.agent['sensor_angle_spacing'] = math.pi / 18
+        self.agent['turn_speed'] = 2 * math.pi * math.pi
+        self.agent['sensor_offset_dist'] = 9.0
         self.agent['sensor_size'] = 5
         self.agent['enable_food'] = ENABLE_BIRB
 
