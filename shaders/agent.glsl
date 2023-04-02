@@ -7,6 +7,7 @@ struct Agent {
     int x;
     int y;
     float angle;
+    float hunger;
 };
 
 uniform float sensor_angle_spacing;
@@ -20,6 +21,8 @@ uniform uint height;
 uniform float move_speed;
 uniform float delta_time;
 uniform float random_seed;
+uniform float hunger_reset;
+uniform bool eat_food;
 
 layout(local_size_x = 1, local_size_y = 1) in;
 layout(std430, binding=0) buffer buffer_0 {
@@ -29,6 +32,8 @@ layout(std430, binding=1) buffer buffer_1 {
     vec2 debug_out[];
 };
 layout(rgba8, location=0) uniform image2D trail_map;
+layout(rgba8, location=1) uniform image2D food_map;
+layout(rgba8, location=1) uniform image2D food_trail_map;
 
 // taken front https://stackoverflow.com/questions/4200224/random-noise-functions-for-glsl
 float hash_noise(vec2 xy, float seed){
@@ -47,26 +52,40 @@ vec4 image_load_default(image2D img, ivec2 pos) {
     return imageLoad(img, pos);
 }
 
+void consumeFood(Agent a, float angle_offset) {
+    ivec2 pos = agent_pos(a);
+    vec4 colour = imageLoad(food_map, pos);
+    if (colour == vec4(0.0, 1.0, 0.0, 1.0)) {
+        if (eat_food) {
+            imageStore(food_map, pos, vec4(0.0));
+        }
+        a.hunger = hunger_reset;
+    }
+    return;
+}
+
 float sense(Agent a, float angle_offset) {
     float angle = a.angle + angle_offset;
     vec2 dir = vec2(cos(angle), sin(angle));
     ivec2 centre = agent_pos(a) + ivec2(dir * sensor_offset_dist);
     float sum = 0;
+    image2D map;
+
+    if (a.hunger >= 0.4) {
+        map = trail_map;
+    } else {
+        map = food_trail_map;
+    }
 
     for (int x = -int(sensor_size); x <= int(sensor_size); x++) {
         for (int y = -int(sensor_size); y <= int(sensor_size); y++) {
             ivec2 pos = centre + ivec2(x, y);
 
             vec4 colour = image_load_default(trail_map, pos);
-            sum += colour.x;
+            sum += max(colour.r, colour.g, colour.b) * colour.a;
         }
     }
 
-    // ivec2 pos = ivec2(agent_pos(a) + 3 * dir * move_speed * delta_time);
-
-    // vec4 colour = image_load_default(trail_map, pos);
-
-    // return colour.x;
     return sum;
 }
 
