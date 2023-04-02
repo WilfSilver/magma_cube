@@ -8,6 +8,7 @@ struct Agent {
     int y;
     float angle;
     uint species;
+    uint size;
 };
 
 uniform float sensor_angle_spacing;
@@ -122,8 +123,8 @@ void main() {
     agents[id].y = new_pos.y;
     vec4 colour = vec4(0.0, 0.0, 0.0, 1.0);
     colour[a.species] = 1.0;
-    for (int x = 0; x < 2; x++) {
-        for (int y = 0; y < 2; y++) {
+    for (int x = - int(a.size / 2); x < int(a.size / 2) + 1; x++) {
+        for (int y = - int(a.size / 2); y < int(a.size / 2) + 1; y++) {
             imageStore(trail_map, ivec2(new_pos.x + x, new_pos.y + y), colour);
         }
     }
