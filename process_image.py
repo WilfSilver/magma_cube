@@ -1,3 +1,4 @@
+from os.path import exists
 from typing import Any, Callable, Dict, Tuple, cast
 from PIL import Image, ImageOps
 from functools import reduce
@@ -43,6 +44,10 @@ def load_food(filename: str, MAX_PASSES=16, FOOD_POINT_RATIO=0.10, ACCEPTABLE_DE
     :return List of (int, int) (x, y)-tuples
     """
 
+    cache_filename = filename + ".cache.png"
+    if exists(cache_filename):
+        return Image.open(cache_filename)
+
     with Image.open(filename) as image:
 
         TOTAL_PIXELS = reduce(lambda x, y: x * y, image.size)
@@ -51,7 +56,9 @@ def load_food(filename: str, MAX_PASSES=16, FOOD_POINT_RATIO=0.10, ACCEPTABLE_DE
         elem = min(map(analyze_colors(image, TOTAL_PIXELS=TOTAL_PIXELS, THRESHOLDS=COUNT_THRESHOLDS), range(2, MAX_PASSES)), key=lambda t: t[1]) # type: ignore
         print(f"DEBUG: {elem[1] / TOTAL_PIXELS * 100}% off target ratio.")
 
-        return clamp_image(image, elem[0], elem[2])
+        out = clamp_image(image, elem[0], elem[2])
+        out.save(cache_filename)
+        return out
 
 
 def clamp_image(original_image: Image.Image, image: Image.Image, pallete_color: int) -> Image.Image:
@@ -59,7 +66,7 @@ def clamp_image(original_image: Image.Image, image: Image.Image, pallete_color: 
     for index, pixel in np.ndenumerate(image):
         original_image.putpixel((index[1], index[0]), (255, 255, 255) if (pixel == pallete_color) else (0, 0, 0))
 
-    return original_image.rotate(180)
+    return original_image.rotate(180).convert("RGBA")
 
 
 if __name__ == "__main__":
