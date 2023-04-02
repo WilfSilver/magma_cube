@@ -54,13 +54,22 @@ class MagmaWindow(mglw.WindowConfig):
 
         self.agent = self.ctx.compute_shader(get_shader("agent"))
         self.agent['trail_map'] = 0
-        self.agents_num = 40000
+        self.agents_num = 25000
 
         info = np.array([
             (0, 0, 0.0)
             for _ in range(self.agents_num)], np.dtype("i4, i4, f4"))
         self.debug_buffer = self.ctx.buffer(data=info)
-        info = np.array([(tuple((x/2) for x in self.window_size), 2 * math.pi * random(), 1.0) for _ in range(self.agents_num)], np.dtype("(2)i4, f4, f4"))
+        points = []
+        while len(points) < self.agents_num:
+            x, y = randint(0, self.window_size[0]), randint(0, self.window_size[1])
+            centrex = (self.window_size[0])/2
+            centrey = (self.window_size[1])/2
+            radius = 125
+            if (((x - centrex) ** 2) + ((y - centrey) ** 2)) ** 0.5 >= 1.25*radius and (((x - centrex) ** 2) + ((y - centrey) ** 2)) ** 0.5 <= 1.5*radius:
+                points.append((x, y))
+
+        info = np.array([(points[_], 2 * math.pi * random(), 1.0) for _ in range(self.agents_num)], np.dtype("(2)i4, f4, f4"))
 
         self.agents_buffer = self.ctx.buffer(data=info)
 
@@ -68,13 +77,13 @@ class MagmaWindow(mglw.WindowConfig):
         print(a)
         self.debug_print_count = 0
         self.agent['num_agents'] = self.agents_num
-        self.agent['move_speed'] = 60
+        self.agent['move_speed'] = 100
 
-        self.agent['sensor_angle_spacing'] = math.pi / 18
-        self.agent['turn_speed'] = 2 * math.pi * math.pi
-        self.agent['sensor_offset_dist'] = 9.0
+        self.agent['sensor_angle_spacing'] = math.pi / 12
+        self.agent['turn_speed'] = 2 * math.pi * 2
+        self.agent['sensor_offset_dist'] = 7.0
         self.agent['sensor_size'] = 5
-        self.agent['enable_food'] = ENABLE_BIRB
+        self.agent['enable_food'] = True
 
         self.trail_maps = [
             self.ctx.texture(
@@ -95,26 +104,15 @@ class MagmaWindow(mglw.WindowConfig):
         self.quad_fs = mglw.geometry.quad_fs()
 
         # Load food!
-        if ENABLE_BIRB:
-            food = load_food("birb.png", MAX_PASSES=16)
-            self.food_texture = self.ctx.texture(food.size, 3, food.tobytes("raw", "RGB"))
-            self.food_texture.filter = mgl.BLEND, mgl.BLEND
+        food = load_food("birb.png", MAX_PASSES=16)
+        self.food_texture = self.ctx.texture(food.size, 3, food.tobytes("raw", "RGB"))
+        self.food_texture.filter = mgl.BLEND, mgl.BLEND
 
-            self.food_trail_maps = [
-                self.ctx.texture(
-                    self.window_size,
-                    4,
-                ) for _ in range(2)
-            ]
-            for map in self.food_trail_maps:
-                map.filter = mgl.BLEND, mgl.BLEND
-        else:
-            self.food_texture = None
-            self.food_trail_maps = []
+        print("Finished setup")
 
     def __del__(self):
         self.agent.release()
-        # self.food_texture.release()
+        self.food_texture.release()
 
     def render(self, time, frame_time):
         self.ctx.clear(0, 0, 0)
@@ -123,10 +121,6 @@ class MagmaWindow(mglw.WindowConfig):
 
         trail_map = self.trail_maps[self.curr_trail_map]
         next_trail_map = self.trail_maps[next_trail_map_index]
-
-        if ENABLE_BIRB:
-            food_trail_map = self.trail_maps[self.curr_trail_map]
-            next_food_trail_map = self.trail_maps[next_trail_map_index]
 
         w, h = trail_map.size
 
@@ -137,28 +131,13 @@ class MagmaWindow(mglw.WindowConfig):
 
         trail_map.bind_to_image(0, read=True, write=True)
 
-        if ENABLE_BIRB:
-            self.food_texture.bind_to_image(1, read=True, write=True)
-            food_trail_map.bind_to_image(2, read=True, write=True)
-
-        # self.food_texture.bind_to_image(1, read=True, write=False)
         self.agents_buffer.bind_to_storage_buffer(0)
-        self.debug_buffer.bind_to_storage_buffer(1)
         self.agent.run(self.agents_num, 1, 1)
-        # input()
 
         self.blur_compute['delta_time'] = frame_time
         next_trail_map.bind_to_image(1, read=False, write=True)
         self.blur_compute.run(w, h, 1)
-
-        if ENABLE_BIRB:
-            self.food_blur_compute['delta_time'] = frame_time
-            food_trail_map.bind_to_image(0, read=True, write=False)
-            next_food_trail_map.bind_to_image(1, read=False, write=True)
-            self.food_blur_compute.run(w, h, 1)
-            next_food_trail_map.use(location=1)
-
-        next_trail_map.use(location=0)
+        next_trail_map.use(0)
 
         self.quad_program["textures"] = [0, 1]
         self.quad_program["enable_birb"] = True
@@ -166,7 +145,6 @@ class MagmaWindow(mglw.WindowConfig):
         # print(dir(self.quad_program))
         self.quad_fs.render(self.quad_program)
         self.curr_trail_map = next_trail_map_index
-
 
 def window():
     MagmaWindow.run()
