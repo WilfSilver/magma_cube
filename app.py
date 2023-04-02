@@ -77,13 +77,11 @@ class MagmaWindow(mglw.WindowConfig):
         self.agents_buffer = self.ctx.buffer(data=info)
 
         self.debug_print_count = 0
-        self.agent['num_agents'] = self.agents_num
-        self.agent['move_speed'] = 100
+        for key, v in opts.items():
+            if key == 'internal':
+                break
+            self.agent[key] = v
 
-        self.agent['sensor_angle_spacing'] = math.pi / 12
-        self.agent['turn_speed'] = 2 * math.pi * 2
-        self.agent['sensor_offset_dist'] = 7.0
-        self.agent['sensor_size'] = 5
         self.agent['enable_food'] = True
 
         self.trail_maps = [
@@ -155,7 +153,7 @@ if __name__ == "__main__":
     presets = [
         {
             'num_agents': 40000,
-            'move_speed': 90,
+            'move_speed': 65,
             'sensor_angle_spacing': math.pi / 9,
             'turn_speed': 2 * math.pi * 60,
             'sensor_offset_dist': 15.0,
@@ -168,7 +166,7 @@ if __name__ == "__main__":
             'num_agents': 40000,
             'move_speed': 90,
             'sensor_angle_spacing': math.pi / 9,
-            'turn_speed': 2 * math.pi * 60,
+            'turn_speed': 2 * math.pi * 30,
             'sensor_offset_dist': 15.0,
             'sensor_size': 5,
             'internal': {
@@ -195,6 +193,28 @@ if __name__ == "__main__":
             'sensor_size': 5,
             'internal': {
                 'boundry': 200
+            }
+        },
+        {
+            'num_agents': 30000,
+            'move_speed': 100,
+            'sensor_angle_spacing': math.pi / 12,
+            'turn_speed': 2 * math.pi * 2,
+            'sensor_offset_dist': 7.0,
+            'sensor_size': 5,
+            'internal': {
+                'boundry': 0
+            }
+        },
+        {
+            'num_agents': 80000,
+            'move_speed': 100,
+            'sensor_angle_spacing': math.pi / 12,
+            'turn_speed': 2 * math.pi * 5,
+            'sensor_offset_dist': 7.0,
+            'sensor_size': 5,
+            'internal': {
+                'boundry': 0
             }
         },
     ]
