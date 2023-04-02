@@ -13,6 +13,9 @@ ENABLE_BIRB = False
 
 from process_image import load_food
 
+opts = {}
+
+
 def gl_version(version_string="4.4"):
     version = version_string.split(".")
     return tuple(int(i) for i in version)
@@ -73,8 +76,6 @@ class MagmaWindow(mglw.WindowConfig):
 
         self.agents_buffer = self.ctx.buffer(data=info)
 
-        a = np.frombuffer(self.agents_buffer.read(), dtype=np.dtype("i4, i4, f4, f4"))
-        print(a)
         self.debug_print_count = 0
         self.agent['num_agents'] = self.agents_num
         self.agent['move_speed'] = 100
@@ -91,8 +92,8 @@ class MagmaWindow(mglw.WindowConfig):
                 4,
             ) for _ in range(2)
         ]
-        for map in self.trail_maps:
-            map.filter = mgl.NEAREST, mgl.NEAREST
+        for m in self.trail_maps:
+            m.filter = mgl.NEAREST, mgl.NEAREST
         self.curr_trail_map = 0
 
         self.blur_compute = self.ctx.compute_shader(get_shader('blur'))
@@ -151,4 +152,52 @@ def window():
 
 
 if __name__ == "__main__":
+    presets = [
+        {
+            'num_agents': 40000,
+            'move_speed': 90,
+            'sensor_angle_spacing': math.pi / 9,
+            'turn_speed': 2 * math.pi * 60,
+            'sensor_offset_dist': 15.0,
+            'sensor_size': 5,
+            'internal': {
+                'boundry': 0
+            }
+        },
+        {
+            'num_agents': 40000,
+            'move_speed': 90,
+            'sensor_angle_spacing': math.pi / 9,
+            'turn_speed': 2 * math.pi * 60,
+            'sensor_offset_dist': 15.0,
+            'sensor_size': 5,
+            'internal': {
+                'boundry': 200
+            }
+        },
+        {
+            'num_agents': 80000,
+            'move_speed': 65,
+            'sensor_angle_spacing': math.pi / 9,
+            'turn_speed': 2 * math.pi * 20,
+            'sensor_offset_dist': 15.0,
+            'sensor_size': 5,
+            'internal': {
+                'boundry': 200
+            }
+        },
+        {
+            'num_agents': 40000,
+            'move_speed': 65,
+            'sensor_angle_spacing': math.pi / 9,
+            'turn_speed': 2 * math.pi * 10,
+            'sensor_offset_dist': 15.0,
+            'sensor_size': 5,
+            'internal': {
+                'boundry': 200
+            }
+        },
+    ]
+    p = int(input("Preset: "))
+    opts = presets[p]
     window()
