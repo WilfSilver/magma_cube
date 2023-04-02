@@ -54,7 +54,7 @@ class MagmaWindow(mglw.WindowConfig):
 
         self.agent = self.ctx.compute_shader(get_shader("agent"))
         self.agent['trail_map'] = 0
-        self.agents_num = 15000
+        self.agents_num = 40000
 
         info = np.array([
             (0, 0, 0.0)
@@ -148,10 +148,6 @@ class MagmaWindow(mglw.WindowConfig):
         self.agents_buffer.bind_to_storage_buffer(0)
         self.debug_buffer.bind_to_storage_buffer(1)
         self.agent.run(self.agents_num, 1, 1)
-        if self.debug_print_count < 50:
-            a = np.frombuffer(self.debug_buffer.read(), dtype=np.dtype("i4, i4, f4"))
-            print(a)
-            self.debug_print_count+=1
         # input()
 
         self.blur_compute['delta_time'] = frame_time
@@ -168,7 +164,7 @@ class MagmaWindow(mglw.WindowConfig):
         next_trail_map.use(location=0)
 
         self.quad_program["textures"] = [0, 1]
-        self.quad_program["enable_birb"] = False
+        self.quad_program["enable_birb"] = True
 
         # print(dir(self.quad_program))
         self.quad_fs.render(self.quad_program)

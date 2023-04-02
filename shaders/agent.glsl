@@ -133,8 +133,8 @@ void main() {
     agents[id].x = new_pos.x;
     agents[id].y = new_pos.y;
     agents[id].hunger = new_hunger;
-    for (int x = -1; x < 2; x++) {
-        for (int y = -1; y < 2; y++) {
+    for (int x = 0; x < 2; x++) {
+        for (int y = 0; y < 2; y++) {
             imageStore(trail_map, ivec2(new_pos.x + x, new_pos.y + y), vec4(a.hunger, 1.0 - a.hunger, 1.0 - a.hunger, 1.0));
         }
     }
