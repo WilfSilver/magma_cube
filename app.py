@@ -75,7 +75,7 @@ class MagmaWindow(mglw.WindowConfig):
         self.agent['turn_speed'] = 2 * math.pi * 4.5
         self.agent['sensor_offset_dist'] = 10.0
         self.agent['sensor_size'] = 5
-        self.agent['enable_food'] = ENABLE_BIRB
+        self.agent['enable_food'] = True
 
         self.trail_maps = [
             self.ctx.texture(
@@ -114,10 +114,6 @@ class MagmaWindow(mglw.WindowConfig):
         trail_map = self.trail_maps[self.curr_trail_map]
         next_trail_map = self.trail_maps[next_trail_map_index]
 
-
-        food_trail_map = self.food_trail_maps[self.curr_trail_map]
-        next_food_trail_map = self.food_trail_maps[next_trail_map_index]
-
         w, h = trail_map.size
 
         self.agent['random_seed'] = random()
@@ -127,24 +123,13 @@ class MagmaWindow(mglw.WindowConfig):
 
         trail_map.bind_to_image(0, read=True, write=True)
 
-        self.food_texture.bind_to_image(1, read=True, write=True)
-        food_trail_map.bind_to_image(2, read=True, write=False)
-
         self.agents_buffer.bind_to_storage_buffer(0)
         self.agent.run(self.agents_num, 1, 1)
 
         self.blur_compute['delta_time'] = frame_time
         next_trail_map.bind_to_image(1, read=False, write=True)
         self.blur_compute.run(w, h, 1)
-
-        # self.food_blur_compute['delta_time'] = frame_time
-        food_trail_map.bind_to_image(0, read=True, write=False)
-        next_food_trail_map.bind_to_image(1, read=False, write=True)
-        self.food_texture.bind_to_image(2, read=True, write=False)
-        self.food_blur_compute.run(w, h, 1)
-        next_food_trail_map.use(location=0)
-
-        # next_trail_map.use(location=0)
+        next_trail_map.use(0)
 
         self.quad_program["textures"] = [0, 1]
         self.quad_program["enable_birb"] = True
