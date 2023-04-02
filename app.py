@@ -63,16 +63,10 @@ class MagmaWindow(mglw.WindowConfig):
             (0, 0, 0.0)
             for _ in range(self.agents_num)], np.dtype("i4, i4, f4"))
         self.debug_buffer = self.ctx.buffer(data=info)
-        points = []
-        while len(points) < self.agents_num:
-            x, y = randint(0, self.window_size[0]), randint(0, self.window_size[1])
-            centrex = (self.window_size[0])/2
-            centrey = (self.window_size[1])/2
-            radius = 125
-            if (((x - centrex) ** 2) + ((y - centrey) ** 2)) ** 0.5 >= 1.25*radius and (((x - centrex) ** 2) + ((y - centrey) ** 2)) ** 0.5 <= 1.5*radius:
-                points.append((x, y))
 
-        info = np.array([(points[_], 2 * math.pi * random(), 1.0) for _ in range(self.agents_num)], np.dtype("(2)i4, f4, f4"))
+        info = np.array([(tuple(randint(opts['internal']['boundry'], x - opts['internal']['boundry']) for x in self.window_size),
+                          2 * math.pi * random(),
+                          1.0) for _ in range(self.agents_num)], np.dtype("(2)i4, f4, f4"))
 
         self.agents_buffer = self.ctx.buffer(data=info)
 
