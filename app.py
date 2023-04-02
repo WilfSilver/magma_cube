@@ -61,12 +61,12 @@ class MagmaWindow(mglw.WindowConfig):
         self.debug_buffer = self.ctx.buffer(data=info)
         info = np.array([
             (tuple(randint(0, x) for x in self.window_size),
-             2 * math.pi * random())
-            for _ in range(self.agents_num)], np.dtype("(2)i4, f4"))
+             2 * math.pi * random(), 1.0)
+            for _ in range(self.agents_num)], np.dtype("(2)i4, f4, f4"))
 
         self.agents_buffer = self.ctx.buffer(data=info)
 
-        a = np.frombuffer(self.agents_buffer.read(), dtype=np.dtype("i4, i4, f4"))
+        a = np.frombuffer(self.agents_buffer.read(), dtype=np.dtype("i4, i4, f4, f4"))
         print(a)
 
         self.agent['num_agents'] = self.agents_num
