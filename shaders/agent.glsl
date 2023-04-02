@@ -115,6 +115,7 @@ void main() {
 
     a.x = new_pos.x;
     a.y = new_pos.y;
+    a.hunger = max(0, a.hunger - delta_time);
 
     float weight_forward = sense(a, 0);
     float weight_left = sense(a, sensor_angle_spacing);
@@ -133,7 +134,7 @@ void main() {
     agents[id].y = new_pos.y;
     for (int x = -1; x < 2; x++) {
         for (int y = -1; y < 2; y++) {
-            imageStore(trail_map, ivec2(new_pos.x + x, new_pos.y + y), vec4(1.0, 1.0, 1.0, 1.0));
+            imageStore(trail_map, ivec2(new_pos.x + x, new_pos.y + y), vec4(a.hunger, 1.0 - a.hunger, 1.0 - a.hunger, 1.0));
         }
     }
     // imageStore(trail_map, new_pos, vec4(1.0, 1.0, 1.0, 1.0));
