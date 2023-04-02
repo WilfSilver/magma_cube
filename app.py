@@ -58,24 +58,25 @@ class MagmaWindow(mglw.WindowConfig):
             (0, 0, 0.0)
             for _ in range(self.agents_num)], np.dtype("i4, i4, f4"))
         self.debug_buffer = self.ctx.buffer(data=info)
+        num_of_species = 3
         info = np.array([
             (tuple(randint(0, x) for x in self.window_size),
-             2 * math.pi * random(), 1.0)
-            for _ in range(self.agents_num)], np.dtype("(2)i4, f4, f4"))
+             2 * math.pi * random(), randint(1, num_of_species - 1))
+            for _ in range(self.agents_num)], np.dtype("(2)i4, f4, u4"))
 
         self.agents_buffer = self.ctx.buffer(data=info)
 
-        a = np.frombuffer(self.agents_buffer.read(), dtype=np.dtype("i4, i4, f4, f4"))
+        a = np.frombuffer(self.agents_buffer.read(), dtype=np.dtype("i4, i4, f4, u4"))
         print(a)
         self.debug_print_count = 0
         self.agent['num_agents'] = self.agents_num
         self.agent['move_speed'] = 90
 
         self.agent['sensor_angle_spacing'] = math.pi / 12
-        self.agent['turn_speed'] = 2 * math.pi * 4.5
+        self.agent['turn_speed'] = 2 * math.pi * 20
         self.agent['sensor_offset_dist'] = 10.0
         self.agent['sensor_size'] = 5
-        self.agent['enable_food'] = True
+        self.agent['repel'] = False
 
         self.trail_maps = [
             self.ctx.texture(
